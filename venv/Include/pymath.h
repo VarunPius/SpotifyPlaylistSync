@@ -37,12 +37,6 @@ extern double pow(double, double);
 #endif /* __STDC__ */
 #endif /* _MSC_VER */
 
-#ifdef _OSF_SOURCE
-/* OSF1 5.1 doesn't make these available with XOPEN_SOURCE_EXTENDED defined */
-extern int finite(double);
-extern double copysign(double, double);
-#endif
-
 /* High precision definition of pi and e (Euler)
  * The values are taken from libc6's math.h.
  */
@@ -61,12 +55,19 @@ extern double copysign(double, double);
 #define Py_MATH_E 2.7182818284590452354
 #endif
 
+/* Tau (2pi) to 40 digits, taken from tauday.com/tau-digits. */
+#ifndef Py_MATH_TAU
+#define Py_MATH_TAU 6.2831853071795864769252867665590057683943L
+#endif
+
+
 /* On x86, Py_FORCE_DOUBLE forces a floating-point number out of an x87 FPU
    register and into a 64-bit memory location, rounding from extended
    precision to double precision in the process.  On other platforms it does
    nothing. */
 
 /* we take double rounding as evidence of x87 usage */
+#ifndef Py_LIMITED_API
 #ifndef Py_FORCE_DOUBLE
 #  ifdef X87_DOUBLE_ROUNDING
 PyAPI_FUNC(double) _Py_force_double(double);
@@ -75,10 +76,13 @@ PyAPI_FUNC(double) _Py_force_double(double);
 #    define Py_FORCE_DOUBLE(X) (X)
 #  endif
 #endif
+#endif
 
+#ifndef Py_LIMITED_API
 #ifdef HAVE_GCC_ASM_FOR_X87
 PyAPI_FUNC(unsigned short) _Py_get_387controlword(void);
 PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
+#endif
 #endif
 
 /* Py_IS_NAN(X)
@@ -171,7 +175,7 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
         #pragma float_control (pop)
         #define Py_NAN __icc_nan()
     #else /* ICC_NAN_RELAXED as default for Intel Compiler */
-        static union { unsigned char buf[8]; double __icc_nan; } __nan_store = {0,0,0,0,0,0,0xf8,0x7f};
+        static const union { unsigned char buf[8]; double __icc_nan; } __nan_store = {0,0,0,0,0,0,0xf8,0x7f};
         #define Py_NAN (__nan_store.__icc_nan)
     #endif /* ICC_NAN_STRICT */
 #endif /* __INTEL_COMPILER */
